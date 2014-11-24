@@ -243,7 +243,7 @@ EMSearch "MFIP", row, col
 		call approved_version
 		EMWriteScreen version, 20, 78
 		transmit
-		EMWriteScreen "GAB2", 20, 70
+		EMWriteScreen "GASM", 20, 70
 		transmit
 		EMReadScreen GA_grant, 7, 13, 75
 	    EMReadScreen ga_members, 1, 13, 32
