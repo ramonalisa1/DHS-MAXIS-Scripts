@@ -1,0 +1,79 @@
+Enter file contents here'STATS GATHERING----------------------------------------------------------------------------------------------------
+name_of_script = "NOTE - expedited screening"
+start_time = timer
+
+
+'LOADING ROUTINE FUNCTIONS----------------------------------------------------------------------------------------------------
+Set run_another_script_fso = CreateObject("Scripting.FileSystemObject")
+Set fso_command = run_another_script_fso.OpenTextFile("Z:\Scripts\BlueZone Script Directory\Script Files\FUNCTIONS FILE.vbs")
+text_from_the_other_script = fso_command.ReadAll
+fso_command.Close
+Execute text_from_the_other_script
+
+'DIALOGS----------------------------------------------------------------------------------------------------
+BeginDialog exp_screening_dialog, 0, 0, 216, 125, "Expedited Screening Dialog"
+  EditBox 100, 25, 50, 15, income
+  EditBox 100, 45, 50, 15, assets
+  EditBox 115, 65, 50, 15, rent
+  CheckBox 15, 95, 55, 10, "Heat (or AC)", heat_AC_check
+  CheckBox 75, 95, 45, 10, "Electricity", electric_check
+  CheckBox 130, 95, 35, 10, "Phone", phone_check
+ButtonGroup ButtonPressed
+    OkButton 160, 25, 50, 15
+    CancelButton 160, 45, 50, 15
+  Text 5, 30, 95, 10, "Income received this month:"
+  Text 5, 50, 95, 10, "Cash, checking, or savings: "
+  Text 5, 70, 105, 10, "Amounts paid for rent/mortgage:"
+  GroupBox 5, 85, 170, 25, "Utilities claimed (check below):"
+EndDialog
+
+'DATE BASED LOGIC FOR UTILITY AMOUNTS------------------------------------------------------------------------------------------
+If date >= cdate("10/01/2015") then			'these variables need to change in October 2015, and subsequently every October
+	heat_AC_amt = 454
+	electric_amt = 141
+	phone_amt = 38
+Else
+	heat_AC_amt = 450
+	electric_amt = 150
+	phone_amt = 38
+End if
+
+'Shows the dialog
+Do
+				Dialog exp_screening_dialog
+				If ButtonPressed = 0 then stopscript
+			If (income <> "" and isnumeric(income) = false) or (assets <> "" and isnumeric(assets) = false) or (rent <> "" and isnumeric(rent) = false) then MsgBox "The income/assets/rent fields must be numeric only. Do not put letters or symbols in these sections."
+		Loop until (income = "" or isnumeric(income) = True) and (assets = "" or isnumeric(assets) = True) and(rent = "" or isnumeric(rent) = True)
+
+'Logic for figuring out utils. The highest priority for the if...then is heat/AC, followed by electric and phone, followed by phone and electric separately.
+If heat_AC_check = checked then
+	utilities = heat_AC_amt
+ElseIf electric_check = checked and phone_check = checked then 
+	utilities = phone_amt + electric_amt					'Phone standard plus electric standard.
+ElseIf phone_check = checked and electric_check = unchecked then
+	utilities = phone_amt
+ElseIf electric_check = checked and phone_check = unchecked then
+	utilities = electric_amt
+End if
+
+'in case no options are clicked, utilities are set to zero.
+If phone_check = unchecked and electric_check = unchecked and heat_AC_check = unchecked then utilities = 0
+
+'If nothing is written for income/assets/rent info, we set to zero.
+If income = "" then income = 0
+If assets = "" then assets = 0
+If rent = "" then rent = 0
+
+
+'Calculates expedited status based on above numbers
+If (int(income) < 150 and int(assets) <= 100) or ((int(income) + int(assets)) < (int(rent) + cint(utilities))) then expedited_status = "client appears expedited"
+If (int(income) + int(assets) >= int(rent) + cint(utilities)) and (int(income) >= 150 or int(assets) > 100) then expedited_status = "client does not appear expedited"
+
+If expedited_status = "client appears expedited" then
+	MsgBox "This client appears expedited. A same day interview needs to be offered."
+End if
+If expedited_status = "client does not appear expedited" then
+	MsgBox "This client does not appear expedited. A same day interview does not need to be offered."
+End if
+
+script_end_procedure("")
